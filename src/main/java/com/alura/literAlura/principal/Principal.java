@@ -15,7 +15,7 @@ public class Principal {
     private static final String URL = "https://gutendex.com/books/";
     private ConsumoApi consumoApi = new ConsumoApi();
     private Conversor conversor = new Conversor();
-    private Integer opcion = 6;
+    private Integer opcion = 10;
     private Scanner scanner = new Scanner(System.in);
     private LibroRepository libroRepository;
     private AutorRepository autorRepository;
@@ -25,40 +25,90 @@ public class Principal {
         this.autorRepository = autorRepository;
     }
 
-    private DatosLibro getLibro(String nombreLibro) {
+    private void leerLibro(Libro libro) {
+        System.out.printf("""
+                        ----- LIBRO -----
+                        Titulo: %s
+                        Autor: %s
+                        Idioma: %s
+                        Numero de descargas: %d
+                        -------------------- \n
+                        """,
+                libro.getTitulo(),
+                libro.getAutor().getNombre(),
+                libro.getIdioma(),
+                libro.getNumeroDeDescargas());
+    }
+
+    private void buscarLibro() {
+        System.out.println("Ingrese el nombre del libro que desea buscar:");
+        String nombreLibro = scanner.next();
         String json = consumoApi.obtenerLibros(URL + "?search=" + nombreLibro.replace(" ", "+"));
         List<DatosLibro> libros = conversor.obtenerDatos(json, Datos.class).resultados();
-        Optional<DatosLibro> libro = libros.stream()
+        Optional<DatosLibro> libroOptional = libros.stream()
                 .filter(l -> l.titulo().toLowerCase().contains(nombreLibro.toLowerCase()))
                 .findFirst();
-        if (libro.isPresent()) {
-            return libro.get();
+        if (libroOptional.isPresent()) {
+            var libro = new Libro(libroOptional.get());
+            libroRepository.save(libro);
+            leerLibro(libro);
         }
-        System.out.println("El libro no ha sido encontrado");
-        return null;
+        System.out.println("El libro no ha podido ser encontrado");
     }
 
-    private void leerLibro(Libro libro) {
-        System.out.println("----- LIBRO -----");
-        System.out.println("Titulo: " + libro.getTitulo());
-        System.out.println("Autor: " + libro.getAutor().getNombre());
-        System.out.println("Idioma: " + libro.getIdioma());
-        System.out.println("Numero de descargas: " + libro.getNumeroDeDescargas());
-        System.out.println("----------\n");
+    private void listarLibros() {
+        List<Libro> libros = libroRepository.findAll();
+        libros.stream()
+                .forEach(this::leerLibro);
     }
+
 
     private void leerAutor(Autor autor) {
-        System.out.println("Autor: " + autor.getNombre());
-        System.out.println("Fecha de nacimiento: " + autor.getFechaDeNacimiento());
-        System.out.println("Fecha de fallecimiento: " + autor.getFechaDeFallecimiento());
-        List<String> libros = autor.getLibros().stream()
-                .map(l -> l.getTitulo())
+        System.out.printf("""
+                        Autor: %s
+                        Fecha de nacimiento: %s
+                        Fecha de fallecimiento: %s
+                        """,
+                autor.getNombre(),
+                autor.getFechaDeNacimiento(),
+                autor.getFechaDeFallecimiento());
+
+        var libros = autor.getLibros().stream()
+                .map(a -> a.getTitulo())
                 .collect(Collectors.toList());
         System.out.println("Libros: " + libros + "\n");
     }
 
+    private void listarAutores() {
+        List<Autor> autores = autorRepository.findAll();
+        autores.stream()
+                .forEach(this::leerAutor);
+    }
+
+    private void listarAutoresPorAño() {
+        System.out.println("Ingresa el año vivo de autor(es) que desea buscar");
+        Integer año = scanner.nextInt();
+        List<Autor> autores = autorRepository.findByFechaDeFallecimientoGreaterThan(año);
+        autores.stream()
+                .forEach(this::leerAutor);
+    }
+
+    private void listarLibrosPorIdioma() {
+        System.out.println("""
+                Ingrese el idioma para buscar los libros
+                es - español
+                en - ingles
+                fr - frances
+                pt - portugues
+                """);
+        String idioma = scanner.next();
+        List<Libro> libros = libroRepository.findByIdioma(idioma);
+        libros.stream()
+                .forEach(this::leerLibro);
+    }
+
     public void mostrarMenu() {
-        while (opcion != 0) {
+        while (opcion != 6) {
             System.out.println("""
                     Elija la opcion a traves de su numero:
                     1- buscar libro por titulo
@@ -66,39 +116,19 @@ public class Principal {
                     3- listar autores registrados
                     4- listar autores vivos en un determinado año
                     5- listar libros por idioma
-                    0- salir
+                    6- salir
                     """);
             opcion = scanner.nextInt();
             if (opcion == 1) {
-                System.out.println("Ingrese el nombre del libro que desea buscar:");
-                String nombreLibro = scanner.next();
-                Libro libro = new Libro(getLibro(nombreLibro));
-                leerLibro(libro);
-                libroRepository.save(libro);
+                buscarLibro();
             } else if (opcion == 2) {
-                List<Libro> libros = libroRepository.findAll();
-                libros.stream()
-                        .forEach(this::leerLibro);
+                listarLibros();
             } else if (opcion == 3) {
-                List<Autor> autores = autorRepository.findAll();
-                autores.stream()
-                        .forEach(this::leerAutor);
+                listarAutores();
             } else if (opcion == 4) {
-                System.out.println("Ingresa el año vivo de autor(es) que desea buscar");
-                Integer fechaDeFallecimiento = scanner.nextInt();
-                List<Autor> autores = autorRepository.findByFechaDeFallecimientoGreaterThan(fechaDeFallecimiento);
-                autores.stream()
-                        .forEach(this::leerAutor);
+                listarAutoresPorAño();
             } else if (opcion == 5) {
-                System.out.println("Ingrese el idioma para buscar los libros:");
-                System.out.println("es - español");
-                System.out.println("en - ingles");
-                System.out.println("fr - frances");
-                System.out.println("pt - portugues");
-                String idioma = scanner.next();
-                List<Libro> libros = libroRepository.findByIdioma(idioma);
-                libros.stream()
-                        .forEach(this::leerLibro);
+                listarLibrosPorIdioma();
             }
         }
     }
