@@ -1,12 +1,14 @@
-package com.alura.literAlura.model;
+package com.alura.literAlura.model.entity.libro;
 
+import com.alura.literAlura.model.dto.DatosAutor;
+import com.alura.literAlura.model.dto.DatosLibro;
+import com.alura.literAlura.model.entity.autor.Autor;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.util.List;
 import java.util.Optional;
 
 @Entity
@@ -24,6 +26,7 @@ public class Libro {
     @ManyToOne(cascade = CascadeType.PERSIST)
     private Autor autor;
     private String idioma;
+    @Column(name = "numero_de_descargas")
     private Integer numeroDeDescargas;
 
     public Libro(DatosLibro libro) {

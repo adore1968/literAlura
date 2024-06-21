@@ -1,5 +1,7 @@
-package com.alura.literAlura.model;
+package com.alura.literAlura.model.entity.autor;
 
+import com.alura.literAlura.model.dto.DatosAutor;
+import com.alura.literAlura.model.entity.libro.Libro;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

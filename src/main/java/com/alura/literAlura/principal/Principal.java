@@ -1,11 +1,15 @@
 package com.alura.literAlura.principal;
 
-import com.alura.literAlura.model.*;
-import com.alura.literAlura.repository.AutorRepository;
-import com.alura.literAlura.repository.LibroRepository;
+import com.alura.literAlura.model.dto.Datos;
+import com.alura.literAlura.model.dto.DatosLibro;
+import com.alura.literAlura.model.entity.autor.Autor;
+import com.alura.literAlura.model.entity.libro.Libro;
+import com.alura.literAlura.model.entity.autor.AutorRepository;
+import com.alura.literAlura.model.entity.libro.LibroRepository;
 import com.alura.literAlura.service.ConsumoApi;
-import com.alura.literAlura.service.Conversor;
+import com.alura.literAlura.service.conversor.Conversor;
 
+import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -42,7 +46,8 @@ public class Principal {
 
     private void buscarLibro() {
         System.out.println("Ingrese el nombre del libro que desea buscar:");
-        String nombreLibro = scanner.next();
+        scanner.nextLine();
+        String nombreLibro = scanner.nextLine();
         String json = consumoApi.obtenerLibros(URL + "?search=" + nombreLibro.replace(" ", "+"));
         List<DatosLibro> libros = conversor.obtenerDatos(json, Datos.class).resultados();
         Optional<DatosLibro> libroOptional = libros.stream()
@@ -107,8 +112,32 @@ public class Principal {
                 .forEach(this::leerLibro);
     }
 
+    private void generarEstadisticasDelNumeroDeDescargas() {
+        var libros = libroRepository.findAll();
+        DoubleSummaryStatistics doubleSummaryStatistics = new DoubleSummaryStatistics();
+        for (Libro libro : libros) doubleSummaryStatistics.accept(libro.getNumeroDeDescargas());
+        System.out.println("Conteo del numero de descargas - " + doubleSummaryStatistics.getCount());
+        System.out.println("Numero de descargas minimo - " + doubleSummaryStatistics.getMin());
+        System.out.println("Numero de descargas maximo - " + doubleSummaryStatistics.getMax());
+        System.out.println("Suma del numero de descargas - " + doubleSummaryStatistics.getSum());
+        System.out.println("Promedio del numero de descargas - " + doubleSummaryStatistics.getAverage() + "\n");
+    }
+
+    private void listarTop10Libros() {
+        libroRepository.buscarTop10Libros().stream()
+                .forEach(this::leerLibro);
+    }
+
+    private void buscarAutorPorNombre() {
+        System.out.println("Ingresa un nombre para buscar al autor");
+        scanner.nextLine();
+        var nombre = scanner.nextLine();
+        autorRepository.findByNombre(nombre).stream()
+                .forEach(this::leerAutor);
+    }
+
     public void mostrarMenu() {
-        while (opcion != 6) {
+        while (opcion != 9) {
             System.out.println("""
                     Elija la opcion a traves de su numero:
                     1- buscar libro por titulo
@@ -116,19 +145,37 @@ public class Principal {
                     3- listar autores registrados
                     4- listar autores vivos en un determinado año
                     5- listar libros por idioma
-                    6- salir
+                    6- generar estadisticas del numero de descargas
+                    7- listar el top 10 de libros mas descargados
+                    8- buscar autor por nombre
+                    9- salir
                     """);
             opcion = scanner.nextInt();
-            if (opcion == 1) {
-                buscarLibro();
-            } else if (opcion == 2) {
-                listarLibros();
-            } else if (opcion == 3) {
-                listarAutores();
-            } else if (opcion == 4) {
-                listarAutoresPorAño();
-            } else if (opcion == 5) {
-                listarLibrosPorIdioma();
+            switch (opcion) {
+                case 1:
+                    buscarLibro();
+                    break;
+                case 2:
+                    listarLibros();
+                    break;
+                case 3:
+                    listarAutores();
+                    break;
+                case 4:
+                    listarAutoresPorAño();
+                    break;
+                case 5:
+                    listarLibrosPorIdioma();
+                    break;
+                case 6:
+                    generarEstadisticasDelNumeroDeDescargas();
+                    break;
+                case 7:
+                    listarTop10Libros();
+                    break;
+                case 8:
+                    buscarAutorPorNombre();
+                    break;
             }
         }
     }
