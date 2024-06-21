@@ -11,3 +11,5 @@ Los pasos seguidos completar este desafío se detallarán a continuación:
 - Análisis de la Respuesta JSON;
 - Inserción y consulta en la base de datos;
 - Exibición de resultados a los usuarios;
+
+![Captura de pantalla (6)](https://github.com/adore1968/literAlura/assets/101434158/ac5b3622-45c9-4b09-941a-e4d04e814048)
